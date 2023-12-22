@@ -1,8 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Category } from './category.entity';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CategoryDTO } from './dto/category.dto';
+import { CategoryDTO, CreateCategoryDTO } from './dto/category.dto';
+import { validate } from 'class-validator';
 
 @Injectable()
 export class CategoriesService {
@@ -15,13 +20,16 @@ export class CategoriesService {
     return this.categoriesRepository.find();
   }
 
-  getCategoryByName(name: string): Promise<Category | null> {
-    return this.categoriesRepository.findOneBy({ name });
+  getCategoryByName(name: string): Promise<Category> {
+    const foundProduct = this.categoriesRepository.findOneBy({ name });
+    if (!foundProduct) {
+      throw new NotFoundException(`Product with name ${name} not found`);
+    }
+    return foundProduct;
   }
 
-  postCategory(
-    newCategory: Omit<CategoryDTO, 'products'>,
-  ): Promise<Category | null> {
+  postCategory(newCategory: CreateCategoryDTO): Promise<Category | null> {
+    this.validateCategory(newCategory);
     const category = {
       isAvailable: true,
       ...newCategory,
@@ -34,8 +42,8 @@ export class CategoriesService {
     name: string,
     data: Partial<CategoryDTO>,
   ): Promise<Category | null> {
-    const categoryFound = await this.categoriesRepository.findOneBy({ name });
-    if (!categoryFound) return null;
+    this.validateCategory(data);
+    const categoryFound = await this.getCategoryByName(name);
     const updatedCategory = this.categoriesRepository.merge(
       categoryFound,
       data,
@@ -43,7 +51,18 @@ export class CategoriesService {
     return await this.categoriesRepository.save(updatedCategory);
   }
 
-  async deleteCategory(name: string): Promise<void> {
-    await this.categoriesRepository.delete(name);
+  async deleteCategory(name: string): Promise<DeleteResult> {
+    const deletedProduct = await this.categoriesRepository.delete(name);
+    if (!deletedProduct) {
+      throw new NotFoundException(`Product with name ${name} not found`);
+    }
+    return deletedProduct;
+  }
+
+  async validateCategory(category: Partial<CategoryDTO>): Promise<void> {
+    const errors = await validate(category);
+    if (errors.length > 0) {
+      throw new BadRequestException(errors);
+    }
   }
 }

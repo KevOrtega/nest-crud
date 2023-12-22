@@ -7,3 +7,9 @@ export class ProductDTO implements Omit<Product, 'id'> {
   isAvailable: boolean;
   category: Category;
 }
+
+export class CreateProductDTO implements Omit<ProductDTO, 'isAvailable'> {
+  name: string;
+  price: number;
+  category: Category;
+}

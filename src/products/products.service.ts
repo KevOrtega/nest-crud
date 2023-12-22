@@ -1,8 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { Product } from './product.entity';
-import { ProductDTO } from './dto/product.dto';
+import { CreateProductDTO, ProductDTO } from './dto/product.dto';
+import { validate } from 'class-validator';
 
 @Injectable()
 export class ProductsService {
@@ -15,13 +20,16 @@ export class ProductsService {
     return this.productsRepository.find();
   }
 
-  getProductById(id: string): Promise<Product | null> {
-    return this.productsRepository.findOneBy({ id });
+  getProductById(id: string): Promise<Product> {
+    const productFound = this.productsRepository.findOneBy({ id });
+    if (!productFound) {
+      throw new NotFoundException(`Product with id ${id} not found`);
+    }
+    return productFound;
   }
 
-  postProduct(
-    newProduct: Omit<ProductDTO, 'isAvailable'>,
-  ): Promise<Product | null> {
+  postProduct(newProduct: CreateProductDTO): Promise<Product | null> {
+    this.validateProduct(newProduct);
     const product = {
       isAvailable: true,
       ...newProduct,
@@ -30,17 +38,25 @@ export class ProductsService {
     return this.productsRepository.save(productCreated);
   }
 
-  async updateProduct(
-    id: string,
-    data: Partial<ProductDTO>,
-  ): Promise<Product | null> {
-    const productFound = await this.productsRepository.findOneBy({ id });
-    if (!productFound) return null;
+  async updateProduct(id: string, data: Partial<ProductDTO>): Promise<Product> {
+    this.validateProduct(data);
+    const productFound = await this.getProductById(id);
     const updatedProduct = this.productsRepository.merge(productFound, data);
     return await this.productsRepository.save(updatedProduct);
   }
 
-  async deleteProduct(id: string): Promise<void> {
-    await this.productsRepository.delete(id);
+  async deleteProduct(id: string): Promise<DeleteResult> {
+    const deletedProduct = await this.productsRepository.delete(id);
+    if (!deletedProduct) {
+      throw new NotFoundException(`Product with id ${id} not found`);
+    }
+    return deletedProduct;
+  }
+
+  async validateProduct(category: Partial<ProductDTO>): Promise<void> {
+    const errors = await validate(category);
+    if (errors.length > 0) {
+      throw new BadRequestException(errors);
+    }
   }
 }

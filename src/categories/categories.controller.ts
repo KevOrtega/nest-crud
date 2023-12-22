@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,8 +9,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
-import { CategoryDTO } from './dto/category.dto';
-import { validate } from 'class-validator';
+import { CategoryDTO, CreateCategoryDTO } from './dto/category.dto';
 
 @Controller('categories')
 export class CategoriesController {
@@ -23,22 +21,12 @@ export class CategoriesController {
   }
 
   @Post()
-  async postCategory(@Body() category: Omit<CategoryDTO, 'products'>) {
-    const errors = await validate(category);
-    if (errors.length > 0) {
-      throw new BadRequestException(errors);
-    }
-
+  async postCategory(@Body() category: CreateCategoryDTO) {
     return this.categoriesService.postCategory(category);
   }
 
   @Put(':id')
   async updateCategory(@Param('id') id: string, @Body() category: CategoryDTO) {
-    const errors = await validate(category);
-    if (errors.length > 0) {
-      throw new BadRequestException(errors);
-    }
-
     return this.categoriesService.updateCategory(id, category);
   }
 
@@ -47,17 +35,11 @@ export class CategoriesController {
     @Param('id') id: string,
     @Body() category: Partial<CategoryDTO>,
   ) {
-    const errors = await validate(category);
-
-    if (errors.length > 0) {
-      throw new BadRequestException(errors);
-    }
-
     return this.categoriesService.updateCategory(id, category);
   }
 
   @Delete(':name')
   deleteCategory(@Param('id') name: string) {
-    this.categoriesService.deleteCategory(name);
+    return this.categoriesService.deleteCategory(name);
   }
 }
