@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
-import { IsNotEmpty, IsNumber, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsBoolean, IsUUID } from 'class-validator';
 import { Category } from 'src/categories/category.entity';
 
 @Entity()
@@ -19,6 +19,8 @@ export class Product {
   @IsBoolean()
   isAvailable: boolean;
 
+  @IsNotEmpty()
+  @IsUUID('4')
   @ManyToOne(() => Category, (category) => category.products)
   category: Category;
 }
