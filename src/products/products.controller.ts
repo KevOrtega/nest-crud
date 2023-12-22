@@ -20,6 +20,11 @@ export class ProductsController {
     return this.productsService.getProducts();
   }
 
+  @Get(':id')
+  getProductById(@Param('id') id: string) {
+    return this.productsService.getProductById(id);
+  }
+
   @Post()
   async postProducts(@Body() product: CreateProductDTO) {
     return this.productsService.postProduct(product);
