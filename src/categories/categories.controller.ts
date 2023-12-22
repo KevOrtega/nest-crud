@@ -20,6 +20,11 @@ export class CategoriesController {
     return this.categoriesService.getCategories();
   }
 
+  @Get(':name')
+  getCategoryById(@Param('name') name: string) {
+    return this.categoriesService.getCategoryByName(name);
+  }
+
   @Post()
   async postCategory(@Body() category: CreateCategoryDTO) {
     return this.categoriesService.postCategory(category);
