@@ -17,13 +17,18 @@ export class CategoriesService {
   ) {}
 
   getCategories(): Promise<Category[]> {
-    return this.categoriesRepository.find();
+    return this.categoriesRepository.find({
+      relations: ['category'],
+    });
   }
 
-  getCategoryByName(name: string): Promise<Category> {
-    const foundProduct = this.categoriesRepository.findOneBy({ name });
+  getCategoryById(id: string): Promise<Category> {
+    const foundProduct = this.categoriesRepository.findOne({
+      where: { id },
+      relations: ['category'],
+    });
     if (!foundProduct) {
-      throw new NotFoundException(`Product with name ${name} not found`);
+      throw new NotFoundException(`Product with id ${id} not found`);
     }
     return foundProduct;
   }
@@ -39,11 +44,11 @@ export class CategoriesService {
   }
 
   async updateCategory(
-    name: string,
+    id: string,
     data: Partial<CategoryDTO>,
   ): Promise<Category | null> {
     this.validateCategory(data);
-    const categoryFound = await this.getCategoryByName(name);
+    const categoryFound = await this.getCategoryById(id);
     const updatedCategory = this.categoriesRepository.merge(
       categoryFound,
       data,
@@ -51,10 +56,10 @@ export class CategoriesService {
     return await this.categoriesRepository.save(updatedCategory);
   }
 
-  async deleteCategory(name: string): Promise<DeleteResult> {
-    const deletedProduct = await this.categoriesRepository.delete(name);
+  async deleteCategory(id: string): Promise<DeleteResult> {
+    const deletedProduct = await this.categoriesRepository.delete(id);
     if (!deletedProduct) {
-      throw new NotFoundException(`Product with name ${name} not found`);
+      throw new NotFoundException(`Product with id ${id} not found`);
     }
     return deletedProduct;
   }
