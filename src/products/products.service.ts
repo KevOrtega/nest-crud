@@ -17,11 +17,16 @@ export class ProductsService {
   ) {}
 
   getProducts(): Promise<Product[]> {
-    return this.productsRepository.find();
+    return this.productsRepository.find({
+      relations: ['category'],
+    });
   }
 
   getProductById(id: string): Promise<Product> {
-    const productFound = this.productsRepository.findOneBy({ id });
+    const productFound = this.productsRepository.findOne({
+      where: { id },
+      relations: ['category'],
+    });
     if (!productFound) {
       throw new NotFoundException(`Product with id ${id} not found`);
     }
